@@ -3,6 +3,8 @@ package output
 import (
 	"fmt"
 	"os"
+	"strings"
+	"time"
 )
 
 // ANSI color codes
@@ -70,16 +72,84 @@ func Header(message string) {
 	fmt.Printf("\n%s\n", Colorize(ColorCyan, message))
 }
 
+// formatDuration formats a duration into a human-readable string
+func formatDuration(d time.Duration) string {
+	if d == 0 {
+		return ""
+	}
+
+	// Round to tenths of a second for display
+	seconds := d.Seconds()
+	if seconds < 1 {
+		return fmt.Sprintf("%.1fs", seconds)
+	} else if seconds < 60 {
+		return fmt.Sprintf("%.1fs", seconds)
+	} else {
+		minutes := int(seconds / 60)
+		remainingSeconds := seconds - float64(minutes*60)
+		return fmt.Sprintf("%dm %.1fs", minutes, remainingSeconds)
+	}
+}
+
+// formatPackageList formats a list of packages for display
+func formatPackageList(packages []string, maxDisplay int) string {
+	if len(packages) == 0 {
+		return ""
+	}
+
+	if len(packages) <= maxDisplay {
+		return strings.Join(packages, ", ")
+	}
+
+	// Show first few packages and indicate there are more
+	displayed := strings.Join(packages[:maxDisplay], ", ")
+	remaining := len(packages) - maxDisplay
+	return fmt.Sprintf("%s, and %d more", displayed, remaining)
+}
+
 // PrintSummary prints the final summary of all operations
 func PrintSummary(steps []UpdateStep) {
 	Header("=== Update Summary ===")
 
 	successCount := 0
 	failCount := 0
+	var totalDuration time.Duration
 
+	// First pass: display basic status with timing and details
 	for _, step := range steps {
+		totalDuration += step.Duration
+
 		if step.Success {
-			Success(step.Name)
+			// Format the status line with duration
+			statusLine := step.Name
+			if step.Duration > 0 {
+				statusLine += fmt.Sprintf(" (%s)", formatDuration(step.Duration))
+			}
+			Success(statusLine)
+
+			// Add detailed information on subsequent lines if available
+			if step.PackageCount > 0 {
+				if len(step.Packages) > 0 {
+					// Show specific package names
+					packageList := formatPackageList(step.Packages, 8)
+					fmt.Printf("  %s %d package(s) updated: %s\n",
+						Colorize(ColorBlue, "•"),
+						step.PackageCount,
+						packageList)
+				} else {
+					// Just show count
+					fmt.Printf("  %s %d package(s) updated\n",
+						Colorize(ColorBlue, "•"),
+						step.PackageCount)
+				}
+			}
+
+			if step.DiskSpaceFreed != "" {
+				fmt.Printf("  %s Freed %s of disk space\n",
+					Colorize(ColorBlue, "•"),
+					step.DiskSpaceFreed)
+			}
+
 			successCount++
 		} else {
 			if step.Error != nil {
@@ -91,17 +161,28 @@ func PrintSummary(steps []UpdateStep) {
 		}
 	}
 
+	// Print final summary with total time
 	fmt.Println()
 	if failCount == 0 {
 		Success(fmt.Sprintf("All %d operation(s) completed successfully!", successCount))
 	} else {
 		Warning(fmt.Sprintf("%d succeeded, %d failed", successCount, failCount))
 	}
+
+	if totalDuration > 0 {
+		fmt.Printf("Total time: %s\n", formatDuration(totalDuration))
+	}
 }
 
 // UpdateStep represents a single operation and its result
 type UpdateStep struct {
-	Name    string
-	Success bool
-	Error   error
+	Name           string
+	Success        bool
+	Error          error
+	Packages       []string
+	PackageCount   int
+	DiskSpaceFreed string
+	StartTime      time.Time
+	EndTime        time.Time
+	Duration       time.Duration
 }
