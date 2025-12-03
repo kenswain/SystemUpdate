@@ -44,7 +44,7 @@ struct MenuBarView: View {
                     .padding(.vertical, 8)
                 }
                 .frame(height: 200)
-                .onChange(of: updateManager.outputLines.count) { _, _ in
+                .onChange(of: updateManager.outputLines.count) { _ in
                     if let lastLine = updateManager.outputLines.last {
                         withAnimation {
                             proxy.scrollTo(lastLine.id, anchor: .bottom)
@@ -70,15 +70,20 @@ struct MenuBarView: View {
 
                 Spacer()
 
-                Button {
-                    SettingsLink()
-                } label: {
-                    Image(systemName: "gear")
-                }
-                .buttonStyle(.borderless)
-                .help("Settings")
-                .onTapGesture {
-                    NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                if #available(macOS 14.0, *) {
+                    SettingsLink {
+                        Image(systemName: "gear")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Settings")
+                } else {
+                    Button {
+                        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                    } label: {
+                        Image(systemName: "gear")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Settings")
                 }
 
                 Button(action: {
