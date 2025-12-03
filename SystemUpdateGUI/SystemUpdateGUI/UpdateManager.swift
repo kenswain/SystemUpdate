@@ -103,9 +103,24 @@ class UpdateManager: ObservableObject {
         }
         process.arguments = arguments
 
-        // Set up environment to force color output (we'll parse ANSI codes)
+        // Set up environment with proper PATH for Homebrew and npm
         var environment = ProcessInfo.processInfo.environment
         environment["TERM"] = "xterm-256color"
+
+        // Add common paths for brew and npm (Homebrew on Apple Silicon and Intel)
+        let additionalPaths = [
+            "/opt/homebrew/bin",
+            "/opt/homebrew/sbin",
+            "/usr/local/bin",
+            "/usr/local/sbin",
+            "/usr/bin",
+            "/bin",
+            "/usr/sbin",
+            "/sbin"
+        ]
+        let currentPath = environment["PATH"] ?? ""
+        environment["PATH"] = additionalPaths.joined(separator: ":") + ":" + currentPath
+
         process.environment = environment
 
         let pipe = Pipe()

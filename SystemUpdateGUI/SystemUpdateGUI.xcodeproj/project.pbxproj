@@ -152,7 +152,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Build Go binary for current architecture\nGO_PROJECT_DIR=\"${SRCROOT}/../\"\nGO_BINARY_NAME=\"system-update\"\n\ncd \"$GO_PROJECT_DIR\"\n\n# Build Go binary\nif command -v go &> /dev/null; then\n    echo \"Building Go binary...\"\n    CGO_ENABLED=0 go build -o \"${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Resources/${GO_BINARY_NAME}\" ./cmd/system-update\nelse\n    echo \"error: Go not found. Please install Go to build the binary.\"\n    exit 1\nfi\n";
+			shellScript = "# Build Go binary for current architecture\nexport PATH=\"/opt/homebrew/bin:/usr/local/bin:/usr/local/go/bin:$PATH\"\n\nGO_PROJECT_DIR=\"${SRCROOT}/../\"\nGO_BINARY_NAME=\"system-update\"\n\ncd \"$GO_PROJECT_DIR\"\n\n# Build Go binary\nif command -v go &> /dev/null; then\n    echo \"Building Go binary...\"\n    CGO_ENABLED=0 go build -o \"${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Resources/${GO_BINARY_NAME}\" ./cmd/system-update\nelse\n    echo \"error: Go not found. Please install Go to build the binary.\"\n    exit 1\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

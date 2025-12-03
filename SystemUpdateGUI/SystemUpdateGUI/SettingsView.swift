@@ -54,7 +54,7 @@ struct SettingsView: View {
                         .font(.headline)
 
                     Toggle("Launch at login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { _, newValue in
+                        .onChange(of: launchAtLogin) { newValue in
                             setLaunchAtLogin(enabled: newValue)
                         }
 
