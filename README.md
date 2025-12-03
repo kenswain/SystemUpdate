@@ -1,6 +1,6 @@
 # system-update
 
-A professional CLI tool for updating Homebrew and npm packages with comprehensive error handling and user-friendly output.
+A professional CLI tool and native macOS menu bar app for updating Homebrew and npm packages with comprehensive error handling and user-friendly output.
 
 ## Features
 
@@ -11,14 +11,16 @@ A professional CLI tool for updating Homebrew and npm packages with comprehensiv
 - **User-Friendly Output**: Color-coded status messages and clear progress indicators
 - **Dry-Run Mode**: Preview operations without executing them
 - **Verbose Mode**: See detailed command output for debugging
+- **macOS Menu Bar App**: Native SwiftUI app with real-time progress display
 
 ## Installation
 
-### Build from Source
+### CLI - Build from Source
 
 ```bash
-# Clone or navigate to the repository
-cd /Users/ken/Code/SystemUpdate
+# Clone the repository
+git clone https://github.com/kenswain/SystemUpdate.git
+cd SystemUpdate
 
 # Build the binary
 make build
@@ -26,6 +28,14 @@ make build
 # Optional: Install to /usr/local/bin for system-wide access
 make install
 ```
+
+### macOS Menu Bar App
+
+1. Open `SystemUpdateGUI/SystemUpdateGUI.xcodeproj` in Xcode
+2. Build and run (⌘R) or archive for distribution (Product → Archive)
+3. The app appears in your menu bar
+
+**Requirements**: Xcode 15+, macOS 13.0+ (Ventura or later)
 
 ## Usage
 
@@ -170,6 +180,14 @@ system-update/
 │   └── updaters/
 │       ├── homebrew.go          # Homebrew update logic
 │       └── npm.go               # npm update logic
+├── SystemUpdateGUI/             # macOS Menu Bar App
+│   ├── SystemUpdateGUI.xcodeproj
+│   └── SystemUpdateGUI/
+│       ├── SystemUpdateGUIApp.swift   # App entry point
+│       ├── MenuBarView.swift          # Main menu bar UI
+│       ├── UpdateManager.swift        # Process management
+│       ├── OutputParser.swift         # CLI output parsing
+│       └── SettingsView.swift         # Settings panel
 ├── go.mod                       # Go module definition
 ├── Makefile                     # Build automation
 └── README.md                    # This file
@@ -209,9 +227,14 @@ make clean
 
 ## Requirements
 
+### CLI
 - Go 1.21 or later
 - Homebrew (optional - will skip if not installed)
 - npm (optional - will skip if not installed)
+
+### macOS App
+- macOS 13.0 (Ventura) or later
+- Xcode 15+ (for building from source)
 
 ## Error Handling
 
@@ -228,13 +251,17 @@ This approach ensures you get as many updates as possible even if some operation
 
 - `NO_COLOR` - Set to any value to disable color output
 
+## macOS Menu Bar App
+
+The SwiftUI menu bar app provides a native macOS experience:
+
+- **Menu Bar Icon**: Lives in your menu bar with status indicators
+- **Real-Time Output**: Watch updates as they happen with color-coded status
+- **Settings Panel**: Configure Homebrew-only, npm-only, or verbose mode
+- **Launch at Login**: Optionally start the app when you log in
+
+The app bundles the Go CLI binary and executes it as a subprocess, streaming output in real-time.
+
 ## License
 
 This tool is provided as-is for personal and professional use.
-
-## Original Script
-
-This Go application replaces the original bash script at:
-`/Users/ken/Code/SystemUpdate/system-update`
-
-The Go version provides enhanced error handling, better user feedback, and more flexible configuration options.
