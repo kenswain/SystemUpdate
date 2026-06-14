@@ -8,18 +8,22 @@ import (
 	"time"
 )
 
-// allowedCommands is the allowlist of commands that can be executed
-var allowedCommands = map[string]string{
-	"brew": "/opt/homebrew/bin/brew",
-	"npm":  "/usr/local/bin/npm",
+// allowedCommands is the allowlist of command names that can be executed
+var allowedCommands = map[string]struct{}{
+	"brew": {},
+	"npm":  {},
 }
 
-// lookupCommand returns the full path for an allowed command or an error if not allowed
+// lookupCommand validates the command against the allowlist and resolves its
+// absolute path via PATH. This keeps the allowlist guard against arbitrary
+// commands while letting the binary resolve to wherever it is actually
+// installed (e.g. /opt/homebrew/bin on Apple Silicon, /usr/local/bin on Intel,
+// or an nvm/fnm/volta-managed location for npm).
 func lookupCommand(command string) (string, error) {
-	if path, ok := allowedCommands[command]; ok {
-		return path, nil
+	if _, ok := allowedCommands[command]; !ok {
+		return "", fmt.Errorf("command %q is not in the allowlist", command)
 	}
-	return "", fmt.Errorf("command %q is not in the allowlist", command)
+	return exec.LookPath(command)
 }
 
 // Config holds runtime configuration for the update runner
@@ -72,7 +76,8 @@ func (r *Runner) ExecuteCommand(name, command string, args ...string) CommandRes
 		}
 	}
 
-	cmd := exec.Command(cmdPath, args...) // #nosec G204 -- cmdPath is from allowedCommands allowlist
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command -- cmdPath is exec.LookPath of an allowlist-validated command name ("brew"/"npm"); no untrusted input reaches here
+	cmd := exec.Command(cmdPath, args...) // #nosec G204 -- cmdPath resolved from allowedCommands allowlist
 	var stdout, stderr bytes.Buffer
 
 	if r.config.Verbose {
