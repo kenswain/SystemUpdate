@@ -8,6 +8,20 @@ import (
 	"time"
 )
 
+// allowedCommands is the allowlist of commands that can be executed
+var allowedCommands = map[string]string{
+	"brew": "/opt/homebrew/bin/brew",
+	"npm":  "/usr/local/bin/npm",
+}
+
+// lookupCommand returns the full path for an allowed command or an error if not allowed
+func lookupCommand(command string) (string, error) {
+	if path, ok := allowedCommands[command]; ok {
+		return path, nil
+	}
+	return "", fmt.Errorf("command %q is not in the allowlist", command)
+}
+
 // Config holds runtime configuration for the update runner
 type Config struct {
 	DryRun  bool
@@ -35,12 +49,22 @@ type CommandResult struct {
 	Duration time.Duration
 }
 
-// ExecuteCommand runs a command and returns its output, duration, and any error
+// ExecuteCommand runs a command and returns its output, duration, and any error.
+// The command must be in the allowlist of permitted commands.
 func (r *Runner) ExecuteCommand(name, command string, args ...string) CommandResult {
 	startTime := time.Now()
 
+	cmdPath, err := lookupCommand(command)
+	if err != nil {
+		return CommandResult{
+			Output:   "",
+			Error:    err,
+			Duration: 0,
+		}
+	}
+
 	if r.config.DryRun {
-		output.Info(fmt.Sprintf("[DRY RUN] Would execute: %s %v", command, args))
+		output.Info(fmt.Sprintf("[DRY RUN] Would execute: %s %v", cmdPath, args))
 		return CommandResult{
 			Output:   "",
 			Error:    nil,
@@ -48,7 +72,7 @@ func (r *Runner) ExecuteCommand(name, command string, args ...string) CommandRes
 		}
 	}
 
-	cmd := exec.Command(command, args...)
+	cmd := exec.Command(cmdPath, args...) // #nosec G204 -- cmdPath is from allowedCommands allowlist
 	var stdout, stderr bytes.Buffer
 
 	if r.config.Verbose {
@@ -86,7 +110,7 @@ func (r *Runner) ExecuteCommand(name, command string, args ...string) CommandRes
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	duration := time.Since(startTime)
 
 	if err != nil {
